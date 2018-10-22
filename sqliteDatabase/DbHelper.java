@@ -64,7 +64,16 @@ public class DbHelper extends SQLiteOpenHelper {
         SQLiteDatabase database = this.getWritableDatabase();
         String queryValues = "INSERT INTO " + TABLE_SQLite + "(name)" + "VALUES('" + name + "')";
 
-        Log.e("insert sqlite ",queryValues);
+        Log.e("insert sqlite ", queryValues);
+        database.execSQL(queryValues);
+        database.close();
+    }
+
+    public void delete(int id) {
+        SQLiteDatabase database = this.getWritableDatabase();
+        String queryValues = "DELETE FROM " + TABLE_SQLite + " WHERE " + COLUMN_ID + "=" + "'" + id + "'";
+
+        Log.e("insert sqlite ", queryValues);
         database.execSQL(queryValues);
         database.close();
     }
