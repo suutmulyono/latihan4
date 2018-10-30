@@ -2,14 +2,17 @@ package comp.example.suutmulyono.latihan4.data;
 
 public class Data {
 
-    public  String id, name;
+    public  String id;
+    public String name;
+    public String size;
 
     public Data(){
     }
 
-    public Data(String id, String name) {
+    public Data(String id, String name, String size) {
         this.id = id;
         this.name = name;
+        this.size = size;
     }
 
     public String getId() {
@@ -26,5 +29,13 @@ public class Data {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getSize() {
+        return size;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
     }
 }

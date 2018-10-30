@@ -6,31 +6,27 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.WindowManager;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import comp.example.suutmulyono.latihan4.adapter.AdapterFile;
+import comp.example.suutmulyono.latihan4.data.Data;
+import comp.example.suutmulyono.latihan4.sqliteDatabase.DbHelper;
 
 public class TulisActivity extends AppCompatActivity {
 
@@ -41,7 +37,10 @@ public class TulisActivity extends AppCompatActivity {
 
     private static final String TAG = TulisActivity.class.getSimpleName();
 
-    private ArrayList<String> dataSet;
+    private ArrayList<String> dataSet = new ArrayList<>();
+
+    DbHelper SQlite = new DbHelper(this);
+    List<Data> fileList = new ArrayList<Data>();
     ListView listView;
     AdapterFile adapterFile;
 
@@ -50,21 +49,31 @@ public class TulisActivity extends AppCompatActivity {
             "suut@rockdut.com"
     };
 
+    public static final String TAG_ID = "id";
+    public static final String TAG_NAME = "name";
+    public static final String TAG_SIZE = "size";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tulis);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        SQlite = new DbHelper(getApplicationContext());
+
         // Spinner element
-        final Spinner spinner = (Spinner) findViewById(R.id.spinner);
-        ArrayAdapter<String> adapter= new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, cities);
+        final Spinner spinner = findViewById(R.id.spinner);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, cities);
 
         spinner.setAdapter(adapter);
 
+        listView = findViewById(R.id.data_file);
+        adapterFile = new AdapterFile(TulisActivity.this, fileList);
+        listView.setAdapter(adapterFile);
+        Log.e("array ", String.valueOf(dataSet));
     }
 
     @Override
@@ -76,28 +85,28 @@ public class TulisActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == android.R.id.home){
+        if (id == android.R.id.home) {
             startActivity(new Intent(this, MainActivity.class));
-        }else if (id == R.id.action_search){
-            Toast.makeText(getBaseContext(),"On going,,, ", Toast.LENGTH_SHORT).show();
-        }else if (id == R.id.action_file){
+        } else if (id == R.id.action_search) {
+            Toast.makeText(getBaseContext(), "On going,,, ", Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.action_file) {
             ChoseFile();
-        }else if (id == R.id.action_send){
-            Toast.makeText(getBaseContext(),"On going,,, ",Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.action_send) {
+            Toast.makeText(getBaseContext(), "On going,,, ", Toast.LENGTH_SHORT).show();
         }
 
         return super.onOptionsItemSelected(item);
     }
 
     private void ChoseFile() {
-        final CharSequence[] dialogitem = {"Lampirkan File","Sisipkan dari Drive"};
+        final CharSequence[] dialogitem = {"Lampirkan File", "Sisipkan dari Drive"};
         dialog = new AlertDialog.Builder(TulisActivity.this);
         dialog.setCancelable(true);
         dialog.setItems(dialogitem, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                switch (which){
-                    case  0 :
+                switch (which) {
+                    case 0:
                         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                         intent.addCategory(Intent.CATEGORY_OPENABLE);
                         intent.setType("*/*");
@@ -105,7 +114,7 @@ public class TulisActivity extends AppCompatActivity {
                         startActivityForResult(intent, READ_REQUEST_CODE);
                         break;
                     case 1:
-                        Toast.makeText(getBaseContext(),"On going,,, ",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getBaseContext(), "On going,,, ", Toast.LENGTH_SHORT).show();
                         break;
                 }
             }
@@ -113,7 +122,7 @@ public class TulisActivity extends AppCompatActivity {
         AlertDialog builder = dialog.create();
         WindowManager.LayoutParams ml = builder.getWindow().getAttributes();
         ml.gravity = Gravity.TOP | Gravity.RIGHT;
-        builder.getWindow().setLayout(60,60);
+        builder.getWindow().setLayout(60, 60);
         builder.show();
     }
 
@@ -128,19 +137,21 @@ public class TulisActivity extends AppCompatActivity {
             if (data != null) {
                 uri = data.getData();
                 Log.e(TAG, "Uri: " + uri.toString());
-                showImage(uri);
+                showFile(uri);
             }
-        }    
+        }
     }
 
-    private String showImage(Uri uri) {
+    private String showFile(Uri uri) {
         String result = null;
-        if (uri.getScheme().equals("content")){
+        String nama = null;
+        if (uri.getScheme().equals("content")) {
             Cursor cursor = getContentResolver().query(uri, null, null, null, null);
 
             try {
                 if (cursor != null && cursor.moveToFirst()) {
                     result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+                    nama = cursor.getString(cursor.getColumnIndex(OpenableColumns.SIZE));
                 }
             } finally {
                 cursor.close();
@@ -154,19 +165,42 @@ public class TulisActivity extends AppCompatActivity {
             }
         }
 
-        Log.e("name ",result);
-        nameFile(result);
+        Log.e("name ", result);
+        nameFile(result, nama);
         return result;
     }
 
-    private void nameFile(String result) {
-        dataSet = new ArrayList<>();
-        dataSet.add(result);
+    private void nameFile(String result, String nama) {
 
-        listView = (ListView) findViewById(R.id.data_file);
-        adapterFile = new AdapterFile(TulisActivity.this, dataSet);
-        listView.setAdapter(adapterFile);
-        Log.e("array ", String.valueOf(dataSet));
+        dataSet.add(result);
+        dataSet.add(nama);
+
+        SQlite.insert(result.trim(), nama.trim());
+    }
+
+    private void getAllData() {
+        ArrayList<HashMap<String, String>> row = SQlite.getAlldata();
+
+        for (int i = 0; i < row.size(); i++) {
+            String id = row.get(i).get(TAG_ID);
+            String name = row.get(i).get(TAG_NAME);
+            String size = row.get(i).get(TAG_SIZE);
+
+            Data data = new Data();
+            data.setId(id);
+            data.setName(name);
+            data.setSize(size);
+
+            fileList.add(data);
+        }
+        adapterFile.notifyDataSetChanged();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        fileList.clear();
+        getAllData();
     }
 
 }

@@ -12,7 +12,7 @@ import java.util.HashMap;
 
 public class DbHelper extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     static final String DATABASE_NAME = "file.db";
 
@@ -20,6 +20,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
     public static final String COLUMN_ID = "id";
     public static final String COLUMN_NAME = "name";
+    public static final String COLUMN_SIZE = "size";
 
     public DbHelper(@Nullable Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -29,7 +30,8 @@ public class DbHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         final String SQL_CREATE_FILE_TABLE = "CREATE TABLE " + TABLE_SQLite + "(" +
                 COLUMN_ID + " INTEGER PRIMARY KEY autoincrement, " +
-                COLUMN_NAME + " TEXT NOT NULL" + " )";
+                COLUMN_NAME + " TEXT NOT NULL, " +
+                COLUMN_SIZE + " TEXT NOT NULL" +" )";
         db.execSQL(SQL_CREATE_FILE_TABLE);
     }
 
@@ -51,6 +53,7 @@ public class DbHelper extends SQLiteOpenHelper {
                 HashMap<String, String> map = new HashMap<String, String>();
                 map.put(COLUMN_ID, cursor.getString(0));
                 map.put(COLUMN_NAME, cursor.getString(1));
+                map.put(COLUMN_SIZE, cursor.getString(2));
                 fileList.add(map);
             } while (cursor.moveToNext());
         }
@@ -60,9 +63,9 @@ public class DbHelper extends SQLiteOpenHelper {
         return fileList;
     }
 
-    public void insert(String name) {
+    public void insert(String name, String size) {
         SQLiteDatabase database = this.getWritableDatabase();
-        String queryValues = "INSERT INTO " + TABLE_SQLite + "(name)" + "VALUES('" + name + "')";
+        String queryValues = "INSERT INTO " + TABLE_SQLite + "(name, size)" + "VALUES('" + name +"','"+ size + "')";
 
         Log.e("insert sqlite ", queryValues);
         database.execSQL(queryValues);
